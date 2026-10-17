@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Планировщик прибыли</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#101828;--mute:#667085;--line:#e4e7ec;--ok:#067647;--okb:#e7f6ee;--bad:#b42318;--badb:#fdeceb;--acc:#4338ca;--accb:#eef0ff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:inherit;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.in{width:min(1120px,100% - 28px);margin:0 auto}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0 0}
+.logo{font-weight:700;font-size:18px}.logo i{font-style:normal;color:var(--acc)}
+#tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding:8px 0 0}
+#tabs button{border:0;background:none;padding:10px 14px;font:inherit;color:var(--mute);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+#tabs button.on{color:var(--acc);border-color:var(--acc);font-weight:600}
+main{padding:20px 0 60px}
+.pg{display:none}.pg.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+h2{font-size:22px;margin-bottom:4px}h3{font-size:16px;margin-bottom:10px}
+.sub{color:var(--mute);margin-bottom:16px}
+.note{background:var(--accb);color:var(--acc);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:14px}
+.warn{background:var(--badb);color:var(--bad);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:14px}
+.grid5{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}
+.kpi span{color:var(--mute);font-size:13px}.kpi b{display:block;font-size:24px;margin:2px 0}.kpi small{color:var(--mute);font-size:12px;line-height:1.3;display:block}
+.ok{color:var(--ok)}.bad{color:var(--bad)}
+.bar{height:12px;background:#eaecf0;border-radius:99px;overflow:hidden;margin:8px 0}.bar u{display:block;height:100%;background:var(--ok);border-radius:99px;transition:width .4s}
+.two{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;align-items:start}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute)}
+.f input,.f select{font:inherit;color:var(--ink);padding:9px 10px;border:1px solid #d0d5dd;border-radius:9px;background:#fff;width:100%}
+.f input:focus,.f select:focus{outline:2px solid #c7d2fe;border-color:var(--acc)}
+.f em{font-style:normal;font-size:12px;color:#98a2b3}
+.r{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}.r:last-child{border:0}
+.r small{display:block;color:var(--mute);font-size:12px}.r b{white-space:nowrap}
+.btn{border:1px solid #d0d5dd;background:#fff;border-radius:9px;padding:9px 14px;font:inherit;cursor:pointer;color:var(--ink)}
+.btn.p{background:var(--acc);border-color:var(--acc);color:#fff}.btn:disabled{opacity:.5;cursor:default}
+.btn:hover:not(:disabled){filter:brightness(.96)}
+.row2{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:right;padding:9px 8px;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left}th{color:var(--mute);font-weight:500;font-size:12px}
+.wrap{overflow-x:auto}
+.srow{display:grid;grid-template-columns:30px 1fr 1fr 40px;gap:8px;align-items:end;margin-bottom:8px}
+.srow .f{gap:2px}.srow .n{padding-bottom:10px;color:var(--mute)}
+.hb{display:grid;grid-template-columns:110px 1fr 110px;gap:8px;align-items:center;margin:6px 0;font-size:13px}
+.hb div{height:18px;background:#eaecf0;border-radius:5px;position:relative}.hb u{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
+.hb b{text-align:right}
+.tar{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.tar .card{margin:0}.tar ul{padding-left:18px;margin:8px 0 12px;color:var(--mute);font-size:14px}.tar h3{font-size:18px}
+.price{font-size:20px;font-weight:700}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#101828;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:.3s;z-index:20}
+#toast.on{opacity:1}
+.foot{color:var(--mute);font-size:12px;margin-top:8px}
+.ov{position:fixed;inset:0;background:rgba(16,24,40,.55);display:none;align-items:center;justify-content:center;z-index:30}.ov.on{display:flex}
+.box{background:#fff;border-radius:16px;padding:24px;width:min(420px,calc(100% - 32px));position:relative}.x{position:absolute;top:10px;right:14px;border:0;background:none;font-size:20px;cursor:pointer;color:var(--mute)}
+.lg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--mute);margin-bottom:4px}.lg span{display:inline-flex;align-items:center;gap:5px}.lg i{width:14px;height:3px;display:inline-block}
+@media(max-width:820px){.tl{display:none}.two{grid-template-columns:1fr}.kpi b{font-size:21px}.srow{grid-template-columns:24px 1fr 1fr 36px}}
+</style>
+</head>
+<body>
+<header><div class="in">
+<div class="top"><div class="logo">Планировщик <i>прибыли</i></div><span class="tl" style="color:var(--mute);font-size:13px">для любого продавца: маркетплейс, магазин, услуги</span><span id="acc" style="display:none;gap:8px;align-items:center"><button class="btn" id="auth">Войти</button><button class="btn" id="out" style="display:none">Выйти</button></span></div>
+<nav id="tabs"></nav>
+</div></header>
+<main class="in">
+<div class="note" id="demo">Пример: это демонстрационные данные. Измените любое поле или нажмите «Сбросить пример» в разделе «Товар».</div>
+
+<section class="pg" id="home">
+<h2>Главная</h2><p class="sub" id="hn"></p>
+<div class="grid5" id="hk"></div>
+<div class="card"><h3>Цель на месяц</h3><div class="bar"><u id="hbar"></u></div><p id="hgoal"></p></div>
+<div class="card"><h3>Сравнение ценовых сценариев</h3><div id="hch"></div><p class="foot">Показана прибыль с одной единицы. Сценарии можно менять в разделе «Сценарии».</p></div>
+<div class="card"><h3>Как идёт месяц</h3><div id="ch1"></div><p class="foot" id="ch1t"></p></div>
+<div class="card"><h3>Как скидка меняет прибыль с единицы</h3><div id="ch2"></div><p class="foot" id="ch2t"></p></div>
+<div class="card" id="hx"></div>
+<div class="card"><h3>На что обратить внимание</h3><ul id="hr" style="padding-left:18px;color:var(--ink)"></ul><p class="foot">Подсказки строятся по простым правилам из ваших цифр. Это не гарантия и не финансовая рекомендация.</p></div>
+<p class="foot">Расчёты зависят только от введённых вами данных и не гарантируют заработок. Комиссии и тарифы проверяйте у своей площадки или посредника.</p>
+</section>
+
+<section class="pg" id="calc">
+<h2>Товар</h2><p class="sub">Введите данные одной единицы товара: расчёт обновляется сразу.</p>
+<div class="two">
+<div class="card"><div class="form" id="form"></div>
+<div class="row2"><button class="btn" id="reset">Сбросить пример</button><button class="btn" id="csv1">Скачать расчёт (CSV)</button><button class="btn p" id="save">Сохранить в «Мои товары»</button></div>
+<p class="foot">Данные хранятся только в этом браузере: они не переносятся на другие устройства и могут пропасть при очистке данных браузера.</p></div>
+<div class="card"><h3>Результат</h3><div id="cres"></div></div>
+</div>
+</section>
+
+<section class="pg" id="scen">
+<h2>Сценарии цен и скидок</h2><p class="sub">Расходы берутся из раздела «Товар». Меняйте цену и скидку, добавляйте и удаляйте сценарии.</p>
+<div class="card"><div id="srows"></div><div class="row2"><button class="btn p" id="sadd">Добавить сценарий</button></div></div>
+<div class="card"><h3>Сравнение</h3><div class="wrap" id="sres"></div><div id="sch" style="margin-top:12px"></div></div>
+</section>
+
+<section class="pg" id="plan">
+<h2>План прибыли на месяц</h2><p class="sub">Сколько нужно продать, чтобы выйти на цель, и что получится при вашем ожидаемом спросе.</p>
+<div class="card"><div class="form" id="pform"></div>
+<div class="row2"><label><input type="radio" name="mode" value="one"> Текущий товар</label>&nbsp;&nbsp;<label><input type="radio" name="mode" value="set"> Набор из «Моих товаров»</label></div></div>
+<div id="pres"></div>
+</section>
+
+<section class="pg" id="prod">
+<h2>Мои товары</h2><p class="sub">Сохраняйте товары, сравнивайте их прибыльность и выгружайте в таблицу.</p>
+<div class="note">Товары хранятся только в этом браузере. Они не синхронизируются между устройствами и могут пропасть при очистке данных браузера. Это не облачный аккаунт.</div>
+<div class="card"><div class="row2"><select class="btn" id="sort"><option value="profit">По прибыли</option><option value="margin">По маржинальности</option><option value="name">По названию</option></select><button class="btn" id="csvall">Скачать все (CSV)</button><button class="btn" id="bk">Сохранить копию данных</button><button class="btn" id="bkl">Загрузить копию</button><input type="file" id="bkf" accept=".json,application/json" hidden></div>
+<div class="wrap" id="ptab"></div></div>
+</section>
+
+<section class="pg" id="tar">
+<h2>Тарифы</h2><p class="sub">Оплата пока не подключена. В этой версии все функции доступны без ограничений. Цены ниже: гипотеза, а не окончательное предложение.</p>
+<div class="tar">
+<div class="card"><h3>Бесплатный</h3><div class="price">0 ₽</div><ul><li>Расчёт товара, прибыль, маржинальность, ROI</li><li>Минимальная цена</li><li>До двух сценариев цен</li><li>Базовый план месяца</li></ul><button class="btn" data-tar="free">Начать бесплатно</button></div>
+<div class="card"><h3>Про</h3><div class="price">199 ₽ в месяц</div><ul><li>До 100 товаров, сравнение</li><li>Неограниченные сценарии</li><li>План по ассортименту, выгрузка</li><li>История расчётов за 30 дней</li></ul><button class="btn p" data-tar="pro">Оформить «Про»</button></div>
+<div class="card"><h3>Про Плюс</h3><div class="price">399 ₽ в месяц</div><ul><li>До 1 000 товаров</li><li>Несколько магазинов</li><li>Расширенные отчёты и сценарии</li><li>История за 12 месяцев</li></ul><button class="btn p" data-tar="plus">Оформить «Про Плюс»</button></div>
+</div></section>
+</main>
+<div class="ov" id="tm"><div class="box"><button class="x" id="tx">✕</button><h3 id="tmt"></h3><div class="row2"><label><input type="radio" name="per" value="m" checked> В месяц</label>&nbsp;&nbsp;<label><input type="radio" name="per" value="y"> В год</label></div><div class="price" id="tmp"></div><p class="foot" id="tmn" style="margin:8px 0 14px"></p><button class="btn p" id="tgo">Перейти к оплате</button></div></div>
+<div class="ov" id="am"><div class="box"><button class="x" id="ax">✕</button><h3 id="amt">Вход</h3>
+<label class="f"><span>Почта</span><input id="ae" type="email" autocomplete="email"></label>
+<label class="f" style="margin-top:10px"><span>Пароль (не короче 8 знаков)</span><input id="ap" type="password"></label>
+<p class="warn" id="aer" style="display:none;margin-top:10px"></p>
+<div class="row2"><button class="btn p" id="ago">Войти</button><button class="btn" id="asw">Создать аккаунт</button></div>
+<p class="foot">Создавая аккаунт, вы соглашаетесь с политикой конфиденциальности и офертой. Ссылки на документы добавит владелец сервиса.</p></div></div>
+<div id="toast"></div>
+
+<script>
+/*CALC*/
+function num(v,lo,hi){v=parseFloat(String(v).replace(',','.'));if(!isFinite(v))v=0;if(lo!=null&&v<lo)v=lo;if(hi!=null&&v>hi)v=hi;return v}
+function kk(p){return p.cost+p.log+p.stor+p.ads+p.pack+p.ret}
+function calc(p,price,disc){var pr=price==null?p.price:price,d=num(disc==null?p.disc:disc,0,100),P=pr*(1-d/100),c=p.comm/100,t=p.tax/100,K=kk(p),com=P*c,pre=P-K-com,tax=p.taxMode==='rev'?P*t:Math.max(0,pre)*t,profit=pre-tax;
+return{pr:pr,d:d,P:P,dsum:pr-P,com:com,tax:tax,K:K,varc:P-profit,profit:profit,margin:P>0?profit/P*100:null,roi:p.cost>0?profit/p.cost*100:null}}
+function minPrice(p){var c=p.comm/100,t=p.tax/100,den=p.taxMode==='rev'?1-c-t:1-c;return den>1e-9?kk(p)/den:null}
+function targetPrice(p,R){var c=p.comm/100,t=p.tax/100,K=kk(p),d;R=Math.max(0,R);if(p.taxMode==='rev'){d=1-c-t;return d>1e-9?(K+R)/d:null}d=1-c;if(d<=1e-9||t>=1)return null;return(K+R/(1-t))/d}
+function need(profit,goal,fixed){return profit>0?Math.max(0,Math.ceil((goal+fixed)/profit-1e-9)):null}
+/*ENDCALC*/
+
+var $=function(i){return document.getElementById(i)},nf=new Intl.NumberFormat('ru-RU',{maximumFractionDigits:2});
+function rub(v){return v==null||!isFinite(v)?'—':nf.format(Math.round(v*100)/100)+' ₽'}
+function pct(v){return v==null||!isFinite(v)?'—':nf.format(Math.round(v*10)/10)+'%'}
+function cnt(v){return v==null?'—':nf.format(v)+' шт.'}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function cl(v){return v==null?'':v>0?'ok':v<0?'bad':''}
+function toast(t){var e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(function(){e.classList.remove('on')},2600)}
+var KEY='pp_v1',LIM={disc:100,comm:100,tax:100};
+function demo(){return{p:{name:'Футболка (пример)',cost:450,price:1500,disc:10,comm:20,log:70,stor:10,ads:60,pack:25,ret:30,fixm:0,tax:0,taxMode:'rev',tp:300},id:null,demo:true,scen:[{price:1500,disc:0},{price:1500,disc:10},{price:1500,disc:20}],plan:{goal:100000,fixed:15000,days:30,perDay:8,pess:70,opt:130,mode:'one'},items:[]}}
+function load(){try{var s=JSON.parse(localStorage.getItem(KEY));if(s&&s.p&&s.plan&&s.scen&&s.items)return s}catch(e){}return null}
+var S=load()||demo();
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(typeof A!=='undefined'&&A.user)sync()}
+
+var F=[['cost','Закупка или себестоимость единицы, ₽','Сколько вам стоит одна штука товара или одна услуга.'],['price','Цена до скидки, ₽','Цена, которую вы ставите на маркетплейсе.'],['disc','Скидка, %','От 0 до 100.'],['comm','Комиссия площадки или посредника, %','Маркетплейс, приём карт, агент. Если комиссии нет, оставьте 0. Ставку берите у своей площадки: тарифы меняются.'],['log','Доставка и логистика на единицу, ₽',''],['stor','Хранение на единицу, ₽',''],['ads','Реклама на единицу, ₽','Сколько рекламы приходится на одну проданную штуку.'],['pack','Упаковка и прочее на единицу, ₽',''],['ret','Возвраты и брак на единицу, ₽','Ожидаемые потери в среднем на проданную штуку. Можно оставить 0.'],['fixm','Фиксированные расходы по товару, ₽ в месяц','Например, съёмка или оформление карточки. Входят в план месяца.'],['tax','Налоговая ставка, %','По умолчанию 0. Это настройка расчёта, а не рекомендация по налогообложению.'],['tp','Желаемая прибыль с единицы, ₽','Нужна для расчёта целевой цены.']];
+function fld(k,l,h,t){return'<label class="f"><span>'+l+'</span><input data-k="'+k+'"'+(t?'':' type="number" inputmode="decimal" min="0" step="any"')+'>'+(h?'<em>'+h+'</em>':'')+'</label>'}
+(function(){var h=fld('name','Название товара','Любое понятное вам название.',1);F.forEach(function(f){if(f[0]==='tax')h+='<label class="f"><span>Как считать налог</span><select data-k="taxMode"><option value="rev">Налог с выручки</option><option value="profit">Налог с прибыли</option></select><em>Выберите один вариант: оба налога сразу не начисляются.</em></label>';h+=fld(f[0],f[1],f[2])});$('form').innerHTML=h;
+$('pform').innerHTML=[['goal','Желаемая прибыль за месяц, ₽'],['fixed','Общие фиксированные расходы за месяц, ₽'],['days','Рабочих дней в месяце'],['perDay','Ожидаемо продаж в день, шт.'],['pess','Пессимистичный спрос, % от ожидаемого'],['opt','Оптимистичный спрос, % от ожидаемого']].map(function(f){return fld(f[0],f[1],'')}).join('')})();
+function fill(){document.querySelectorAll('#form [data-k]').forEach(function(e){var v=S.p[e.dataset.k];e.value=v==null?'':v});document.querySelectorAll('#pform [data-k]').forEach(function(e){e.value=S.plan[e.dataset.k]});document.querySelectorAll('input[name=mode]').forEach(function(e){e.checked=e.value===S.plan.mode})}
+function upd(){S.demo=false;persist();draw()}
+$('form').addEventListener('input',function(e){var k=e.target.dataset.k;if(!k)return;S.p[k]=k==='name'||k==='taxMode'?e.target.value:num(e.target.value,0,LIM[k]);S.id=S.id;upd()});
+$('form').addEventListener('change',function(e){var k=e.target.dataset.k;if(k&&k!=='name'&&k!=='taxMode')e.target.value=S.p[k]});
+$('pform').addEventListener('input',function(e){var k=e.target.dataset.k;if(!k)return;var hi=k==='pess'||k==='opt'?1000:k==='days'?31:null;S.plan[k]=num(e.target.value,0,hi);upd()});
+$('pform').addEventListener('change',function(e){var k=e.target.dataset.k;if(k)e.target.value=S.plan[k]});
+document.querySelectorAll('input[name=mode]').forEach(function(e){e.addEventListener('change',function(){S.plan.mode=e.value;upd()})});
+$('reset').onclick=function(){var d=demo();S.p=d.p;S.id=null;S.scen=d.scen;S.plan=d.plan;S.demo=true;persist();fill();draw();renderScen();toast('Пример восстановлен')};
+
+function row(l,v,c,h){return'<div class="r"><span>'+l+(h?'<small>'+h+'</small>':'')+'</span><b class="'+(c||'')+'">'+v+'</b></div>'}
+function bars(a){var m=Math.max.apply(null,a.map(function(x){return Math.abs(x[1])}).concat([1]));return a.map(function(x){return'<div class="hb"><span>'+x[0]+'</span><div><u style="width:'+Math.max(2,Math.abs(x[1])/m*100)+'%;background:'+(x[1]<0?'#f04438':'#12b76a')+'"></u></div><b class="'+cl(x[1])+'">'+rub(x[1])+'</b></div>'}).join('')}
+function fx(){return S.plan.fixed+S.p.fixm}
+
+function draw(){
+var p=S.p,R=calc(p),mp=minPrice(p),tp=targetPrice(p,p.tp),n=need(R.profit,S.plan.goal,fx());
+$('demo').style.display=S.demo?'block':'none';
+$('hn').textContent=p.name||'Без названия';
+$('hk').innerHTML=[['Прибыль с единицы',rub(R.profit),cl(R.profit),'Сколько остаётся после всех расходов и налога'],['Маржинальность',pct(R.margin),cl(R.margin),'Какая доля цены после скидки остаётся прибылью'],['ROI',pct(R.roi),cl(R.roi),'Прибыль относительно закупки'],['Минимальная цена',rub(mp),'','Ниже этой цены продажа уходит в убыток'],['Продаж для цели',n==null?'Недостижимо':cnt(n),n==null?'bad':'','Сколько штук нужно продать за месяц']].map(function(k){return'<div class="kpi"><span>'+k[0]+'</span><b class="'+k[2]+'">'+k[1]+'</b><small>'+k[3]+'</small></div>'}).join('');
+var units=S.plan.perDay*S.plan.days,exp=units*R.profit-fx(),pc=S.plan.goal>0?Math.max(0,Math.min(100,exp/S.plan.goal*100)):0;
+$('hbar').style.width=pc+'%';
+$('hgoal').innerHTML='Цель: <b>'+rub(S.plan.goal)+'</b> за месяц. При ожидаемых '+nf.format(S.plan.perDay)+' продажах в день получится около <b class="'+cl(exp)+'">'+rub(exp)+'</b> ('+pct(S.plan.goal>0?exp/S.plan.goal*100:null)+' от цели) с учётом расходов '+rub(fx())+'.';
+$('hch').innerHTML=bars(S.scen.map(function(s,i){return['№'+(i+1)+': '+(s.disc>0?'скидка '+nf.format(s.disc)+'%':'без скидки'),calc(p,s.price,s.disc).profit]}));
+var t='При цене '+rub(R.pr)+' и скидке '+pct(R.d)+' покупатель платит '+rub(R.P)+'. ';
+t+=R.profit>=0?'С одной единицы остаётся '+rub(R.profit)+' ('+pct(R.margin)+' от цены). ':'С одной единицы вы теряете '+rub(-R.profit)+'. ';
+t+=n==null?'При такой прибыли цель месяца недостижима: поднимите цену или снизьте расходы. ':'Чтобы выйти на цель, нужно продать '+cnt(n)+(S.plan.days>0?', это примерно '+Math.ceil(n/S.plan.days)+' в день. ':'. ');
+t+=mp==null?'':'Минимальная цена без убытка: '+rub(mp)+'.';
+$('hx').innerHTML='<h3>Что это значит</h3><p>'+t+'</p>';
+// товар
+var c='';
+if(R.profit<0)c+='<div class="warn">Убыток: при этих данных вы теряете '+rub(-R.profit)+' с каждой единицы.</div>';
+if(R.P===0)c+='<div class="warn">Цена после скидки равна нулю: маржинальность и ROI не считаются.</div>';
+if(mp==null)c+='<div class="warn">Сумма комиссии и налога с выручки не меньше 100%: цены без убытка не существует.</div>';
+var ml=mp!=null&&R.d<100?mp/(1-R.d/100):null,tl=tp!=null&&R.d<100?tp/(1-R.d/100):null,nd=calc(p,p.price,0);
+c+=row('Исходная цена',rub(R.pr))+row('Скидка',R.dsum>0?'−'+rub(R.dsum):rub(0),'',pct(R.d))+row('Цена после скидки',rub(R.P))+row('Комиссия площадки или посредника',rub(R.com))+row('Закупка, логистика, хранение, реклама, упаковка, возвраты',rub(R.K))+row('Налог',rub(R.tax),'',p.taxMode==='rev'?'с выручки':'с прибыли')+row('Все переменные расходы',rub(R.varc),'','вместе с комиссией и налогом')+row('Прибыль с единицы',rub(R.profit),cl(R.profit))+row('Маржинальность',pct(R.margin),cl(R.margin),'прибыль ÷ цена после скидки')+row('ROI',pct(R.roi),cl(R.roi),'прибыль ÷ закупка');
+c+=row('Минимальная цена без убытка',rub(mp),'','после скидки'+(ml!=null?'; цена до скидки при текущей скидке: '+rub(ml):''))+row('Целевая цена для прибыли '+rub(p.tp),rub(tp),'','после скидки'+(tl!=null?'; до скидки: '+rub(tl):''))+row('Влияние скидки на прибыль',(R.profit-nd.profit>=0?'+':'−')+rub(Math.abs(R.profit-nd.profit)),cl(R.profit-nd.profit),'по сравнению с продажей без скидки');
+c+='<p class="foot">Как считается минимальная цена: расходы без комиссии ÷ (1 − комиссия − налог с выручки). При налоге с прибыли в точке «ноль» налог тоже равен нулю, поэтому делитель: 1 − комиссия.</p>';
+$('cres').innerHTML=c;
+renderScenRes();renderPlan();renderCharts()}
+
+function renderScen(){$('srows').innerHTML=S.scen.map(function(s,i){return'<div class="srow"><span class="n">'+(i+1)+'</span><label class="f"><span>Цена до скидки, ₽</span><input data-i="'+i+'" data-f="price" type="number" inputmode="decimal" min="0" step="any" value="'+num(s.price)+'"></label><label class="f"><span>Скидка, %</span><input data-i="'+i+'" data-f="disc" type="number" inputmode="decimal" min="0" max="100" step="any" value="'+num(s.disc)+'"></label><button class="btn" data-del="'+i+'" title="Удалить">✕</button></div>'}).join('')||'<p class="sub">Сценариев нет. Добавьте первый.</p>';renderScenRes()}
+function renderScenRes(){var p=S.p,base=S.scen.length?calc(p,S.scen[0].price,S.scen[0].disc).profit:0,h='<table><tr><th>Сценарий</th><th>Итоговая цена</th><th>Прибыль</th><th>Маржа</th><th>ROI</th><th>Продаж для цели</th><th>К №1</th></tr>',w='';
+S.scen.forEach(function(s,i){var r=calc(p,s.price,s.disc),n=need(r.profit,S.plan.goal,fx());if(r.profit<0)w+='<div class="warn">Сценарий №'+(i+1)+': убыток '+rub(-r.profit)+' с единицы.</div>';h+='<tr><td>№'+(i+1)+' · '+pct(r.d)+'</td><td>'+rub(r.P)+'</td><td class="'+cl(r.profit)+'">'+rub(r.profit)+'</td><td>'+pct(r.margin)+'</td><td>'+pct(r.roi)+'</td><td>'+(n==null?'недостижимо':cnt(n))+'</td><td class="'+cl(r.profit-base)+'">'+(i?(r.profit-base>=0?'+':'−')+rub(Math.abs(r.profit-base)):'—')+'</td></tr>'});
+$('sres').innerHTML=w+h+'</table>';$('sch').innerHTML=bars(S.scen.map(function(s,i){return['№'+(i+1)+' · '+pct(s.disc),calc(p,s.price,s.disc).profit]}))}
+$('srows').addEventListener('input',function(e){var i=e.target.dataset.i;if(i==null)return;var f=e.target.dataset.f;S.scen[i][f]=num(e.target.value,0,f==='disc'?100:null);upd()});
+$('srows').addEventListener('change',function(e){var i=e.target.dataset.i;if(i!=null)e.target.value=S.scen[i][e.target.dataset.f]});
+$('srows').addEventListener('click',function(e){var d=e.target.dataset.del;if(d==null)return;S.scen.splice(+d,1);upd();renderScen()});
+$('sadd').onclick=function(){if(A.on&&S.scen.length>=A.limits.scen){toast('На вашем тарифе доступно сценариев: '+A.limits.scen);go('tar');return}S.scen.push({price:S.p.price,disc:0});upd();renderScen()};
+
+function renderPlan(){var a=S.plan,p=S.p,R=calc(p),h='';
+if(a.mode==='one'){var f=fx(),n=need(R.profit,a.goal,f),u=a.perDay*a.days,rq=u>0?(a.goal+f)/u:null;
+h+='<div class="card"><h3>Что нужно для цели: '+esc(p.name||'товар')+'</h3>';
+if(n==null)h+='<div class="warn">При текущих параметрах цель недостижима: прибыль с единицы не больше нуля.</div>';
+h+=row('Прибыль с единицы сейчас',rub(R.profit),cl(R.profit))+row('Нужная прибыль с единицы',rub(rq),'','при ваших ожидаемых продажах: '+nf.format(u)+' шт. в месяц')+row('Продать за месяц',n==null?'—':cnt(n),'','с округлением вверх')+row('Продавать в день',n==null||a.days<=0?'—':cnt(Math.ceil(n/a.days)))+row('Нужная выручка',rub(n==null?null:n*R.P))+row('Переменные расходы',rub(n==null?null:n*R.varc),'','комиссия, налог и расходы на единицу')+row('Фиксированные расходы',rub(f),'','общие '+rub(a.fixed)+' и по товару '+rub(p.fixm))+row('Окупить фиксированные расходы',cnt(need(R.profit,0,f)),'','сколько продать, чтобы выйти в ноль')+'</div>';
+h+='<div class="card"><h3>Три допущения о спросе</h3><div class="wrap"><table><tr><th>Допущение</th><th>Продаж в месяц</th><th>Выручка</th><th>Прибыль</th><th>К цели</th></tr>';
+[['Пессимистичное',a.pess],['Базовое',100],['Оптимистичное',a.opt]].forEach(function(s){var q=u*s[1]/100,pr=q*R.profit-f;h+='<tr><td>'+s[0]+' ('+nf.format(s[1])+'%)</td><td>'+cnt(Math.round(q))+'</td><td>'+rub(q*R.P)+'</td><td class="'+cl(pr)+'">'+rub(pr)+'</td><td class="'+cl(pr-a.goal)+'">'+(pr-a.goal>=0?'+':'−')+rub(Math.abs(pr-a.goal))+'</td></tr>'});
+h+='</table></div><p class="foot">Это ваши допущения о спросе, а не прогноз на основе реальных данных.</p></div>'}
+else{var tot=0,fs=a.fixed;h+='<div class="card"><h3>Вклад каждого товара</h3>';
+if(!S.items.length)h+='<p class="sub">Сохраните товары в разделе «Мои товары» и укажите там продажи в день.</p>';
+else{h+='<div class="wrap"><table><tr><th>Товар</th><th>Прибыль с ед.</th><th>В день</th><th>Вклад за месяц</th><th>Если только он</th></tr>';
+S.items.forEach(function(it){var r=calc(it),c=(it.pd||0)*a.days*r.profit;tot+=c;fs+=it.fixm||0;var n=need(r.profit,a.goal,a.fixed+(it.fixm||0));h+='<tr><td>'+esc(it.name||'Без названия')+'</td><td class="'+cl(r.profit)+'">'+rub(r.profit)+'</td><td>'+nf.format(it.pd||0)+'</td><td class="'+cl(c)+'">'+rub(c)+'</td><td>'+(n==null?'недостижимо':cnt(n))+'</td></tr>'});
+var res=tot-fs;h+='</table></div>'+row('Сумма вкладов',rub(tot))+row('Фиксированные расходы',rub(fs),'','общие и по товарам')+row('Ожидаемая прибыль за месяц',rub(res),cl(res))+row('Разница с целью '+rub(a.goal),(res-a.goal>=0?'+':'−')+rub(Math.abs(res-a.goal)),cl(res-a.goal))+'<p class="foot">Единое число продаж для набора не считается: оно зависит от доли каждого товара. Продажи в день задаются в «Моих товарах».</p>'}
+h+='</div>'}
+$('pres').innerHTML=h}
+
+function saveItem(){if(A.on){if(!A.user){openAuth('reg');return}if(!S.items.some(function(x){return x.id===S.id})&&S.items.length>=A.limits.items){toast('Лимит вашего тарифа: товаров '+A.limits.items+'. Подключите тариф выше.');go('tar');return}}var it=JSON.parse(JSON.stringify(S.p));it.id=S.id||String(Date.now());it.at=new Date().toISOString();var i=S.items.findIndex(function(x){return x.id===it.id});if(i<0){it.pd=S.plan.perDay;S.items.push(it)}else{it.pd=S.items[i].pd;S.items[i]=it}S.id=it.id;S.demo=false;persist();renderProd();draw();toast(i<0?'Товар добавлен в «Мои товары»':'Товар обновлён')}
+$('save').onclick=saveItem;
+function renderProd(){var k=$('sort').value,L=S.items.map(function(it){return{it:it,r:calc(it)}});L.sort(function(a,b){return k==='name'?String(a.it.name).localeCompare(String(b.it.name),'ru'):k==='margin'?(b.r.margin==null?-1e9:b.r.margin)-(a.r.margin==null?-1e9:a.r.margin):b.r.profit-a.r.profit});
+if(!L.length){$('ptab').innerHTML='<p class="sub" style="margin-top:12px">Пока пусто. В разделе «Товар» нажмите «Сохранить в Мои товары».</p>';return}
+var h='<table><tr><th>Товар</th><th>Цена после скидки</th><th>Прибыль</th><th>Маржа</th><th>ROI</th><th>Продаж в день</th><th></th></tr>';
+L.forEach(function(x,i){h+='<tr><td>'+esc(x.it.name||'Без названия')+(i===0&&k!=='name'&&L.length>1&&x.r.profit>0?' <span class="ok">★ лучший</span>':'')+'</td><td>'+rub(x.r.P)+'</td><td class="'+cl(x.r.profit)+'">'+rub(x.r.profit)+'</td><td>'+pct(x.r.margin)+'</td><td>'+pct(x.r.roi)+'</td><td><input data-pd="'+esc(x.it.id)+'" type="number" min="0" step="any" value="'+num(x.it.pd)+'" style="width:70px;padding:5px;border:1px solid #d0d5dd;border-radius:7px;font:inherit"></td><td style="white-space:nowrap"><button class="btn" data-open="'+esc(x.it.id)+'">Открыть</button> <button class="btn" data-rm="'+esc(x.it.id)+'">Удалить</button></td></tr>'});
+$('ptab').innerHTML=h+'</table>'}
+$('sort').onchange=renderProd;
+$('ptab').addEventListener('input',function(e){var id=e.target.dataset.pd;if(!id)return;var it=S.items.find(function(x){return x.id===id});if(it){it.pd=num(e.target.value,0);persist();renderPlan()}});
+$('ptab').addEventListener('click',function(e){var o=e.target.dataset.open,d=e.target.dataset.rm;if(o){var it=S.items.find(function(x){return x.id===o});if(it){S.p=JSON.parse(JSON.stringify(it));S.id=it.id;delete S.p.id;delete S.p.at;delete S.p.pd;S.demo=false;persist();fill();draw();go('calc')}}
+if(d){S.items=S.items.filter(function(x){return x.id!==d});if(S.id===d)S.id=null;persist();renderProd();draw();toast('Товар удалён')}});
+
+function cell(v){v=String(v==null?'':v);return/[;"\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+function n2(v){return v==null||!isFinite(v)?'':String(Math.round(v*100)/100).replace('.',',')}
+function csvRows(list){var rows=[['Название','Закупка, ₽','Цена до скидки, ₽','Скидка, %','Цена после скидки, ₽','Комиссия, %','Логистика, ₽','Хранение, ₽','Реклама, ₽','Упаковка и прочее, ₽','Возвраты и брак, ₽','Фиксированные расходы в месяц, ₽','Налог: способ','Налог, %','Прибыль с единицы, ₽','Маржинальность, %','ROI, %','Минимальная цена, ₽','Дата расчёта']],d=new Date().toLocaleDateString('ru-RU');
+list.forEach(function(p){var r=calc(p);rows.push([p.name,n2(p.cost),n2(p.price),n2(p.disc),n2(r.P),n2(p.comm),n2(p.log),n2(p.stor),n2(p.ads),n2(p.pack),n2(p.ret),n2(p.fixm),p.taxMode==='rev'?'с выручки':'с прибыли',n2(p.tax),n2(r.profit),n2(r.margin),n2(r.roi),n2(minPrice(p)),d])});return rows}
+async function saveCsv(name,list){var txt='\ufeff'+csvRows(list).map(function(r){return r.map(cell).join(';')}).join('\r\n'),b=new Blob([txt],{type:'text/csv;charset=utf-8'}),d=null;
+try{d=window.claude&&await claude.use('downloads')}catch(e){}
+if(d){try{await d.save({filename:name,data:b})}catch(e){if(!e||e.code!=='declined')toast('Не удалось сохранить файл')}}
+else{var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();a.remove()}}
+$('csv1').onclick=function(){if(A.on&&A.plan==='free'){toast('Выгрузка в таблицу доступна на тарифе «Про»');go('tar');return}saveCsv('расчёт-товара.csv',[S.p])};
+$('csvall').onclick=function(){if(A.on&&A.plan==='free'){toast('Выгрузка в таблицу доступна на тарифе «Про»');go('tar');return}if(!S.items.length){toast('Сначала сохраните хотя бы один товар');return}saveCsv('мои-товары.csv',S.items)};
+
+var T=[['home','Главная'],['calc','Товар'],['scen','Сценарии'],['plan','План на месяц'],['prod','Мои товары'],['tar','Тарифы']];
+$('tabs').innerHTML=T.map(function(t){return'<button data-go="'+t[0]+'">'+t[1]+'</button>'}).join('');
+function go(id){document.querySelectorAll('.pg').forEach(function(e){e.classList.toggle('on',e.id===id)});document.querySelectorAll('#tabs button').forEach(function(b){b.classList.toggle('on',b.dataset.go===id)});if(id==='prod')renderProd();if(id==='scen')renderScen();scrollTo(0,0)}
+$('tabs').addEventListener('click',function(e){if(e.target.dataset.go)go(e.target.dataset.go)});
+
+function kfmt(v){var a=Math.abs(v),s=v<0?'−':'';return s+(a>=1e6?nf.format(Math.round(a/1e5)/10)+' млн':a>=1e3?nf.format(Math.round(a/100)/10)+' тыс.':nf.format(Math.round(a)))}
+function lc(o){var W=640,H=270,L=64,R=14,T=14,B=44,xs=[],ys=[0],i,v,g='';o.s.forEach(function(s){s.p.forEach(function(q){xs.push(q[0]);ys.push(q[1])})});(o.h||[]).forEach(function(l){ys.push(l.y)});
+var x0=Math.min.apply(null,xs),x1=Math.max.apply(null,xs),y0=Math.min.apply(null,ys),y1=Math.max.apply(null,ys);if(x1===x0)x1=x0+1;if(y1===y0)y1=y0+1;var pd=(y1-y0)*.08;y0-=pd;y1+=pd;
+function X(t){return L+(t-x0)/(x1-x0)*(W-L-R)}function Y(t){return T+(1-(t-y0)/(y1-y0))*(H-T-B)}
+for(i=0;i<=4;i++){v=y0+(y1-y0)*i/4;g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="#eaecf0"/><text x="'+(L-6)+'" y="'+(Y(v)+4)+'" text-anchor="end" font-size="11" fill="#667085">'+kfmt(v)+'</text>'}
+for(i=0;i<=5;i++){v=x0+(x1-x0)*i/5;g+='<text x="'+X(v)+'" y="'+(H-24)+'" text-anchor="middle" font-size="11" fill="#667085">'+nf.format(Math.round(v*10)/10)+'</text>'}
+g+='<text x="'+((L+W-R)/2)+'" y="'+(H-6)+'" text-anchor="middle" font-size="12" fill="#667085">'+o.xl+'</text><line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(0)+'" y2="'+Y(0)+'" stroke="#98a2b3" stroke-dasharray="4 3"/>';
+(o.h||[]).forEach(function(l){g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(l.y)+'" y2="'+Y(l.y)+'" stroke="'+l.c+'" stroke-dasharray="6 4"/><text x="'+(W-R)+'" y="'+(Y(l.y)-5)+'" text-anchor="end" font-size="11" fill="'+l.c+'">'+l.t+'</text>'});
+o.s.forEach(function(s){g+='<polyline fill="none" stroke="'+s.c+'" stroke-width="2.5" stroke-linejoin="round" points="'+s.p.map(function(q){return X(q[0]).toFixed(1)+','+Y(q[1]).toFixed(1)}).join(' ')+'"/>'});
+if(o.m)g+='<circle cx="'+X(o.m[0])+'" cy="'+Y(o.m[1])+'" r="5" fill="#4338ca" stroke="#fff" stroke-width="2"/>';
+return'<div class="lg">'+o.s.map(function(s){return'<span><i style="background:'+s.c+'"></i>'+s.n+'</span>'}).join('')+(o.m?'<span><i style="background:#4338ca;height:8px;width:8px;border-radius:50%"></i>Сейчас</span>':'')+'</div><svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto">'+g+'</svg>'}
+function renderCharts(){var p=S.p,a=S.plan,R=calc(p),f=fx(),days=Math.round(a.days),t='',h='',mp=minPrice(p),i;
+if(days>0&&a.perDay>0){var mk=function(k){var q=[];for(var d=0;d<=days;d++)q.push([d,d*a.perDay*k*R.profit-f]);return q};
+h=lc({xl:'День месяца',s:[{n:'Пессимистично',c:'#f79009',p:mk(a.pess/100)},{n:'Базово',c:'#4338ca',p:mk(1)},{n:'Оптимистично',c:'#12b76a',p:mk(a.opt/100)}],h:[{y:a.goal,c:'#067647',t:'Цель '+rub(a.goal)}]});
+if(R.profit<=0)t='Прибыль с единицы не больше нуля: линии идут вниз, каждая продажа увеличивает убыток.';
+else{var be=f/(a.perDay*R.profit),gd=(a.goal+f)/(a.perDay*R.profit);t=(f>0?'Расходы '+rub(f)+' окупятся примерно на '+Math.ceil(be)+'-й день'+(be>days?' (это позже конца месяца)':'')+'. ':'Фиксированных расходов нет: прибыль растёт с первой продажи. ')+(gd<=days?'Цель при базовом спросе будет достигнута примерно на '+Math.ceil(gd)+'-й день.':'При базовом спросе цель за месяц не достигается: к концу месяца будет '+rub(days*a.perDay*R.profit-f)+'.')+' Линии показывают ваши допущения, а не прогноз.'}}
+else h='<p class="sub">Укажите дни и ожидаемые продажи в день в разделе «План на месяц».</p>';
+$('ch1').innerHTML=h;$('ch1t').textContent=t;
+var q=[];for(i=0;i<=60;i+=5)q.push([i,calc(p,p.price,i).profit]);
+$('ch2').innerHTML=lc({xl:'Скидка, %',s:[{n:'Прибыль с единицы, ₽',c:'#4338ca',p:q}],m:R.d<=60?[R.d,R.profit]:null});
+var bd=p.price>0&&mp!=null?(1-mp/p.price)*100:null;
+$('ch2t').textContent=bd==null?'':bd<=0?'Даже без скидки цена ниже минимальной: продажа в убыток.':'Скидка больше '+pct(Math.min(100,bd))+' делает продажу убыточной при текущих расходах.';
+var rs=[],ad=R.P>0?p.ads/R.P*100:0,nd=calc(p,p.price,0),u=a.perDay*a.days,n=need(R.profit,a.goal,f);
+if(R.profit<0)rs.push('Сейчас вы продаёте в убыток'+(mp!=null?': цена после скидки должна быть не ниже '+rub(mp):'')+'. Поднимите цену, уберите скидку или снизьте расходы.');
+else if(R.margin!=null&&R.margin<10)rs.push('Маржинальность ниже 10%: небольшой рост расходов или скидка превратят прибыль в убыток.');
+if(ad>15)rs.push('Реклама занимает '+pct(ad)+' цены. Проверьте, окупается ли она.');
+if(R.d>0&&nd.profit>0&&R.profit<nd.profit*.7)rs.push('Скидка '+pct(R.d)+' отнимает '+pct((1-R.profit/nd.profit)*100)+' прибыли с единицы. Убедитесь, что она даёт достаточный рост продаж.');
+if(n!=null&&u>0&&n>u*1.2)rs.push('Для цели нужно продать '+cnt(n)+', а вы ожидаете '+cnt(Math.round(u))+'. Пересмотрите цель, цену или ожидания по спросу.');
+if(p.ret===0)rs.push('Возвраты и брак не учтены. Если они у вас бывают, добавьте ожидаемые потери на единицу.');
+if(p.tax===0)rs.push('Налоговая ставка равна 0%. Если вы платите налог, укажите ставку, иначе прибыль завышена.');
+if(!rs.length)rs.push('Серьёзных предупреждений нет. Проверьте, что расходы указаны полностью.');
+$('hr').innerHTML=rs.slice(0,5).map(function(x){return'<li style="margin-bottom:6px">'+x+'</li>'}).join('')}
+
+async function saveBlob(name,b){var d=null;try{d=window.claude&&await claude.use('downloads')}catch(e){}
+if(d){try{await d.save({filename:name,data:b})}catch(e){if(!e||e.code!=='declined')toast('Не удалось сохранить файл')}}
+else{var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();a.remove()}}
+$('bk').onclick=function(){saveBlob('копия-данных.json',new Blob([JSON.stringify(S)],{type:'application/json'}))};
+$('bkl').onclick=function(){$('bkf').click()};
+$('bkf').onchange=function(){var f=this.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var d=JSON.parse(r.result);if(!(d&&d.p&&d.plan&&d.scen&&d.items))throw 0;S=d;persist();fill();draw();renderScen();renderProd();toast('Копия загружена')}catch(e){toast('Этот файл не подходит')}};r.readAsText(f);this.value=''};
+
+/* Тарифы. Здесь же вставляются данные для оплаты (см. инструкцию): ссылки на оплату и контакты. */
+var PAY={contact:{tg:'',mail:''},links:{pro_m:'',pro_y:'',plus_m:'',plus_y:''}},TD={pro:['Про',199,1990],plus:['Про Плюс',399,3990]},tcur='pro';
+function per(){return document.querySelector('input[name=per]:checked').value}
+function tinfo(){var d=TD[tcur],m=per()==='m',has=!!PAY.links[tcur+'_'+per()],ct=PAY.contact.tg||PAY.contact.mail;$('tmt').textContent='Тариф «'+d[0]+'»';$('tmp').textContent=nf.format(m?d[1]:d[2])+' ₽ '+(m?'в месяц':'в год')+' (цена-гипотеза)';
+$('tmn').textContent=has?'Оплата проходит на странице платёжного сервиса. Функции тарифа пока не блокируются: проверка доступа появится вместе с входом на сервере.':ct?'Платёжный сервис ещё не подключён. Кнопка откроет письмо или чат, чтобы договориться об оплате.':'Платёжный сервис и контакты ещё не подключены. Когда владелец их укажет, здесь появится переход к оплате.';$('tgo').textContent=has?'Перейти к оплате':ct?'Написать о тарифе':'Скоро';if(typeof A!=='undefined'&&A.on){$('tmn').textContent='Оплата проходит на странице ЮKassa. Тариф включится автоматически после оплаты.';$('tgo').textContent=A.user?'Перейти к оплате':'Войти и оплатить'}}
+document.querySelectorAll('[data-tar]').forEach(function(b){b.onclick=function(){if(b.dataset.tar==='free'){go('calc');return}tcur=b.dataset.tar;tinfo();$('tm').classList.add('on')}});
+document.querySelectorAll('input[name=per]').forEach(function(e){e.onchange=tinfo});
+$('tx').onclick=function(){$('tm').classList.remove('on')};$('tm').onclick=function(e){if(e.target===$('tm'))$('tm').classList.remove('on')};
+$('tgo').onclick=function(){if(typeof A!=='undefined'&&A.on){payNow();return}var d=TD[tcur],u=PAY.links[tcur+'_'+per()],m='Хочу подключить тариф «'+d[0]+'» ('+(per()==='m'?'на месяц':'на год')+').';
+if(u){window.open(u,'_blank','noopener')}else if(PAY.contact.tg){window.open('https://t.me/'+PAY.contact.tg+'?text='+encodeURIComponent(m),'_blank','noopener')}else if(PAY.contact.mail){location.href='mailto:'+PAY.contact.mail+'?subject='+encodeURIComponent('Тариф «'+d[0]+'»')+'&body='+encodeURIComponent(m)}else toast('Оплата ещё не подключена')};
+
+
+/* ===== Режим с сервером: вход, облачное хранение, тарифы, оплата ===== */
+var A={on:false,user:null,plan:'free',until:0,limits:{items:1,scen:2}},PN={free:'Бесплатный',pro:'Про',plus:'Про Плюс'},amode='login',st=null;
+function api(m,u,b){return fetch(u,{method:m,credentials:'same-origin',headers:b?{'Content-Type':'application/json'}:{},body:b?JSON.stringify(b):undefined}).then(function(r){return r.json().then(function(j){j._s=r.status;return j})})}
+function setUser(j){A.user=j.user?j.user.email:null;if(j.user){A.plan=j.user.plan;A.until=j.user.until;A.limits=j.user.limits}else{A.plan='free';A.limits={items:1,scen:2}}
+$('auth').textContent=A.user?A.user+' · '+PN[A.plan]+(A.plan!=='free'?' до '+new Date(A.until).toLocaleDateString('ru-RU'):''):'Войти';$('out').style.display=A.user?'':'none'}
+function sync(){clearTimeout(st);st=setTimeout(function(){api('PUT','api/data',{data:S}).then(function(j){if(j._s===403)toast(j.message||'Превышен лимит тарифа')})},800)}
+function pull(){return api('GET','api/data').then(function(j){if(j.data&&j.data.p&&j.data.items){S=j.data;fill();draw();renderScen();renderProd()}else sync()})}
+function applyLimits(){if(S.scen.length>A.limits.scen){S.scen=S.scen.slice(0,A.limits.scen);persist();renderScen();draw();toast('На вашем тарифе доступно сценариев: '+A.limits.scen)}}
+function openAuth(m){amode=m;$('amt').textContent=m==='reg'?'Создание аккаунта':'Вход';$('ago').textContent=m==='reg'?'Создать аккаунт':'Войти';$('asw').textContent=m==='reg'?'У меня уже есть аккаунт':'Создать аккаунт';$('ap').autocomplete=m==='reg'?'new-password':'current-password';$('aer').style.display='none';$('am').classList.add('on')}
+$('auth').onclick=function(){if(!A.user)openAuth('login')};
+$('asw').onclick=function(){openAuth(amode==='reg'?'login':'reg')};
+$('ax').onclick=function(){$('am').classList.remove('on')};$('am').onclick=function(e){if(e.target===$('am'))$('am').classList.remove('on')};
+$('ago').onclick=function(){var b=$('ago');b.disabled=true;api('POST','api/'+(amode==='reg'?'register':'login'),{email:$('ae').value,password:$('ap').value}).then(function(j){b.disabled=false;if(j._s!==200){$('aer').textContent=j.message||'Не получилось';$('aer').style.display='block';return}$('am').classList.remove('on');$('ap').value='';setUser(j);pull().then(applyLimits);toast('Вы вошли')}).catch(function(){b.disabled=false;$('aer').textContent='Нет связи с сервером';$('aer').style.display='block'})};
+$('out').onclick=function(){api('POST','api/logout',{}).then(function(){setUser({user:null});toast('Вы вышли')})};
+function payNow(){if(!A.user){$('tm').classList.remove('on');openAuth('reg');return}$('tgo').disabled=true;api('POST','api/pay',{plan:tcur,per:per()}).then(function(j){$('tgo').disabled=false;if(j.url)location.href=j.url;else toast(j.message||'Не удалось создать платёж')}).catch(function(){$('tgo').disabled=false;toast('Нет связи с сервером')})}
+function boot(){fetch('api/me',{credentials:'same-origin'}).then(function(r){if(!r.ok||(r.headers.get('content-type')||'').indexOf('json')<0)throw 0;return r.json()}).then(function(j){A.on=true;$('acc').style.display='flex';setUser(j);
+var back=/[?&]paid=1/.test(location.search);if(back)history.replaceState(null,'',location.pathname);
+var go1=back&&A.user?api('POST','api/sync-pay',{}).then(function(j2){setUser(j2);toast(A.plan!=='free'?'Тариф подключён':'Платёж ещё обрабатывается. Обновите страницу через минуту.')}):Promise.resolve();
+go1.then(function(){if(A.user)return pull().then(applyLimits)})}).catch(function(){})}
+
+fill();draw();renderScen();renderProd();go('home');boot();
+</script>
+</body>
+</html>
